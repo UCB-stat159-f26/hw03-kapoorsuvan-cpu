@@ -4,22 +4,29 @@ import json
 import re
 
 
-def _read_match_array(javascript):
-    """Decode the JSON-compatible value assigned to ``morematchmx``."""
-    if not isinstance(javascript, str):
-        raise TypeError("Career JavaScript must be a string.")
-    assignment = re.search(r"\bvar\s+morematchmx\s*=\s*", javascript)
-    if assignment is None:
-        raise ValueError("Career JavaScript has no morematchmx match array.")
+def _decode_match_array(value):
+    """Read a JSON-compatible array without evaluating trailing JavaScript."""
     try:
-        return json.JSONDecoder().raw_decode(javascript[assignment.end():])[0]
+        return json.JSONDecoder().raw_decode(value)[0]
     except json.JSONDecodeError as error:
         raise ValueError("Career JavaScript contains an invalid match array.") from error
 
 
-def _parse_match_rows(javascript):
-    """Return rows from either career format, retaining their original fields."""
-    rows = _read_match_array(javascript)
+def _read_match_array(javascript, array_name="morematchmx"):
+    """Read historical ``morematchmx`` or recent ``matchmx`` singles data."""
+    if not isinstance(javascript, str):
+        raise TypeError("Career JavaScript must be a string.")
+    if array_name not in ("morematchmx", "matchmx"):
+        raise ValueError("Match array name must be 'morematchmx' or 'matchmx'.")
+    assignment = re.search(rf"\bvar\s+{array_name}\s*=\s*", javascript)
+    if assignment is None:
+        raise ValueError(f"Career JavaScript has no {array_name} match array.")
+    return _decode_match_array(javascript[assignment.end():])
+
+
+def _parse_match_rows(javascript, array_name="morematchmx"):
+    """Return historical or recent rows, retaining either tour's original fields."""
+    rows = _read_match_array(javascript, array_name)
     if not isinstance(rows, list):
         raise ValueError("The career match array must be a list of rows.")
     for index, row in enumerate(rows):
