@@ -77,3 +77,46 @@ def test_reports_the_position_of_a_malformed_row(row):
 def test_rejects_non_string_input(javascript):
     with pytest.raises(TypeError, match="must be a string"):
         _parse_match_rows(javascript)
+
+
+@pytest.mark.parametrize("row", [FEMALE_ROW, MALE_ROW], ids=["female", "male"])
+def test_reads_recent_matches_from_a_player_page(row):
+    page = '<html><script>var matchmx = ' + json.dumps([row]) + '; unused();</script></html>'
+    assert _parse_match_rows(page, "matchmx") == [row]
+
+
+def test_selects_singles_when_both_archives_and_doubles_are_present():
+    page = "var matchmx_dubs = " + json.dumps([MALE_ROW]) + ";"
+    page += "var morematchmx = " + json.dumps([MALE_ROW]) + ";"
+    page += "var matchmx = " + json.dumps([FEMALE_ROW]) + ";"
+    assert _parse_match_rows(page, "matchmx") == [FEMALE_ROW]
+    assert _parse_match_rows(page) == [MALE_ROW]
+
+
+@pytest.mark.parametrize("variable", ["matchmx_dubs", "matchmx_extra", "morematchmx"])
+def test_does_not_substitute_other_arrays_for_missing_recent_singles(variable):
+    with pytest.raises(ValueError, match="no matchmx match array"):
+        _parse_match_rows(f"var {variable} = [];", "matchmx")
+
+
+def test_accepts_empty_recent_array_with_whitespace():
+    assert _parse_match_rows("var\tmatchmx\n = \n[];", "matchmx") == []
+
+
+@pytest.mark.parametrize("array_name", ["matchmx_dubs", "other", ".*", "", None])
+def test_rejects_unsupported_array_names(array_name):
+    with pytest.raises(ValueError, match="Match array name must be"):
+        _parse_match_rows("var matchmx = [];", array_name)
+
+
+@pytest.mark.parametrize("value", ["[", "undefined", "makeMatches()"])
+def test_rejects_malformed_recent_match_data(value):
+    with pytest.raises(ValueError, match="invalid match array"):
+        _parse_match_rows("var matchmx = " + value, "matchmx")
+
+
+@pytest.mark.parametrize("rows, message", [({}, "must be a list of rows"),
+                                        ([[]], "row 1 needs at least 17 fields")])
+def test_validates_recent_array_and_row_shapes(rows, message):
+    with pytest.raises(ValueError, match=message):
+        _parse_match_rows("var matchmx = " + json.dumps(rows), "matchmx")
