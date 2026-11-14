@@ -2,7 +2,7 @@ Suvan Kapoor
 
 # Tennis career plots
 
-This is my Python package for [STAT 159 HW3](https://stat159.berkeley.edu/fall-2026/hws/hw03/hw03.html). It gets a player's singles matches from Tennis Abstract and plots their age against the difference between their age and their opponent's age. Wins are cyan and losses are purple, following the NYT chart from HW1 and HW2, without the point annotations.
+This is my Python package for STAT159 HW3. It gets a player's singles matches from Tennis Abstract and plots their age against the difference between their age and their opponent's age. Wins are cyan and losses are purple, following the NYT chart from HW1 and HW2, without the point annotations.
 
 ## Installation
 
